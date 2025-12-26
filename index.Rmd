@@ -1,0 +1,87 @@
+---
+---
+# starting fresh, clean r enviroment
+rm(list = ls()) #cleans r environment
+
+#opening a file from URl named fragility 23
+
+linkGit="https://github.com/Fundamentals-Samuel/Homework-1/raw/refs/heads/main/FSI-2023-DOWNLOAD.xlsx" #also defining linkgit using github link
+
+#installing rio package
+
+library(rio) #library installs package
+fragility23=rio::import(file=linkGit) #object with data
+
+#names of columns in Fragilty23
+names(x=fragility23)#finds names in frag23
+
+#data types in the df, all read as they should be
+str(object=fragility23) #verifying the data in the object
+
+#shows the first ten rows
+head(x=fragility23,10) #ten rows meaning most fragile states
+
+#shows the last ten rows
+tail(x=fragility23,10) #ten rowns of least fragile states
+
+##Transformative commands, first command to subset data in frag23_sub, keeping s1 p1 e2 plus country and total
+
+grep(pattern="Country|S1|P1|E2|Total",  x=names(fragility23), fixed=F, value=T) #test the code we made
+
+keep=grep(pattern="Country|S1|P1|E2|Total", x=names(fragility23), fixed=F, value=T) #keep is object name for Grep command
+frag23_sub=fragility23[,keep] #defining frag23_sub as the keep object with the grep command
+
+#now we must rename the colums in frag23 sub to s1 p1 and e2
+names(frag23_sub)[3:5]=c("S1","P1", "E2") #renames the colums to these simpler terms
+
+#top ten BEST countries on E2 with country name listed; I chose option 2 so i can see what country; lowest fragility scores!
+
+tail(frag23_sub[order(x=-frag23_sub$E2),
+'Country'],10) #lists best countries with their names included on country
+
+##Computations!
+
+#provides a statisical summary of frag23sub
+
+summary(object=frag23_sub) #summary function of the frag23sub object
+
+#provide the value of the worst quartile of  total
+
+q3_Total=quantile(x = frag23_sub$Total, 
+                  probs = 0.75, 
+                  na.rm = TRUE) #worst auratiles of the total column
+
+#provides correlations between the columns in frag23 sub 
+
+cor(x=frag23_sub[,-c(1,2)]) #function that finds correlation in the datat  on frag23sub
+
+#what are their significance
+
+library(corrtable) #installs the library for the function
+
+corrtable::correlation_matrix(df=frag23_sub[,-c(1,2)]) #uses the corrtable function correlation matrix to create a matrix to demonstrate statisical significance of the columns
+
+#regress P1 and E2 on S1, s1 is dependent, p1 and e2 are dependent, lm creates regresion, data pulls data from frag23_sub
+lm(S1~P1+E2,data=frag23_sub)
+
+#creates more detailed explanation of regression from lm function
+model <- lm(S1~P1+E2,data=frag23_sub)
+summary(model) #provides readble summary of model function
+
+#creating visual plot of correlation between s1 and e2, using histiogram
+plot(x=frag23_sub$S1, y=frag23_sub$E2) #plotting s1 and e2
+
+#coloring the points on graph if the country is amongst the worst quartile of total
+
+frag23_sub$Total>=q3_Total #define q3 toal
+frag23_sub$worstQt=frag23_sub$Total>=q3_Total #defines the worst from q3 total
+
+plot(frag23_sub$S1, 
+     frag23_sub$E2,pch=20,
+     col = as.factor(frag23_sub$worstQt)) #colors and plots the variable we defined earlier as worstqt
+
+
+#now we want a visual regression of the model object we defined earlier by using sjplot
+
+library(sjPlot) #installs sjplot
+plot_models(model) #uses plot models function from library to create visual representation of regression
